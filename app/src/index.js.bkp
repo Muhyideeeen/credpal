@@ -1,0 +1,36 @@
+const express = require("express");
+const { createClient } = require("redis");
+
+const app = express();
+app.use(express.json());
+
+const PORT = 3000;
+const REDIS_URL = process.env.REDIS_URL || "redis://redis:6379";
+
+const client = createClient({ url: REDIS_URL });
+client.on("error", (err) => console.error("Redis error", err));
+
+(async () => {
+  await client.connect();
+  console.log("Connected to Redis");
+})();
+
+app.get("/health", (req, res) => {
+  res.json({ status: "ok" });
+});
+
+app.get("/status", async (req, res) => {
+  try {
+    const pong = await client.ping();
+    res.json({ app: "running", redis: pong });
+  } catch {
+    res.status(500).json({ app: "running", redis: "down" });
+  }
+});
+
+app.post("/process", async (req, res) => {
+  await client.set("last_process", JSON.stringify(req.body || {}));
+  res.json({ message: "Processed" });
+});
+
+app.listen(PORT, () => console.log(`Listening on ${PORT}`));
