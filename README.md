@@ -167,7 +167,6 @@ push to main
 
 **No secrets in source code.** All sensitive values are handled through:
 - GitHub Actions Secrets (encrypted) for CI/CD credentials — `DOCKERHUB_TOKEN`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`
-- AWS SSM Parameter Store for runtime secrets injected into containers
 - `.env` is git-ignored and never committed
 
 **Non-root container.** The app runs as `USER node` (UID 1000) inside the container, following the principle of least privilege. This is enforced both in the Dockerfile and in the ECS task definition.
