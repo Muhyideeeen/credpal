@@ -1,25 +1,30 @@
 const express = require("express");
 const { createClient } = require("redis");
-
 const app = express();
 app.use(express.json());
 
 const PORT = process.env.APP_PORT || 3000;
-
-
 const REDIS_HOST = process.env.REDIS_HOST || "redis";
 const REDIS_PORT = process.env.REDIS_PORT || 6379;
 const REDIS_PASSWORD = process.env.REDIS_PASSWORD;
+const REDIS_TLS = process.env.REDIS_TLS === "true";
 
+// Use rediss:// (TLS) when REDIS_TLS=true, redis:// otherwise
+const protocol = REDIS_TLS ? "rediss" : "redis";
 const REDIS_URL = REDIS_PASSWORD
-  ? `redis://:${REDIS_PASSWORD}@${REDIS_HOST}:${REDIS_PORT}`
-  : `redis://${REDIS_HOST}:${REDIS_PORT}`;
-
+  ? `${protocol}://:${REDIS_PASSWORD}@${REDIS_HOST}:${REDIS_PORT}`
+  : `${protocol}://${REDIS_HOST}:${REDIS_PORT}`;
 
 let redisClient;
 
 async function initRedis() {
-  redisClient = createClient({ url: REDIS_URL });
+  redisClient = createClient({
+    url: REDIS_URL,
+    socket: {
+      tls: REDIS_TLS,
+      rejectUnauthorized: false // required for AWS ElastiCache self-signed certs
+    }
+  });
 
   redisClient.on("error", (err) => {
     console.error("Redis error:", err.message);
